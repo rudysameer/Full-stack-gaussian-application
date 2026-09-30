@@ -1,0 +1,45 @@
+from pathlib import Path
+
+from backend.services.job_runner import JobRunner
+
+
+class ColmapService:
+    def __init__(self, job_runner: JobRunner):
+        self.job_runner = job_runner
+
+    def run(self, project_name: str) -> str:
+        project_dir = Path("colmap") / project_name
+
+        image_path = project_dir / "images"
+        database_path = project_dir / "database.db"
+        sparse_path = project_dir / "sparse"
+        sparse_path.mkdir(parents=True, exist_ok=True)
+
+        commands = [
+            [
+                "colmap",
+                "feature_extractor",
+                "--image_path",
+                str(image_path),
+                "--database_path",
+                str(database_path),
+            ],
+            [
+                "colmap",
+                "exhaustive_matcher",
+                "--database_path",
+                str(database_path),
+            ],
+            [
+                "colmap",
+                "mapper",
+                "--image_path",
+                str(image_path),
+                "--database_path",
+                str(database_path),
+                "--output_path",
+                str(sparse_path),
+            ],
+        ]
+
+        return self.job_runner.run_pipeline(commands)

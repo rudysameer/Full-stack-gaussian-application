@@ -1,0 +1,139 @@
+import re
+
+
+class ColmapProgressParser:
+
+    FEATURE_EXTRACTION_STAGE = "Feature extraction"
+    FEATURE_MATCHING_STAGE = "Exhaustive feature matching"
+    MAPPER_STAGE = "Loading database"
+
+    FEATURE_EXTRACTION_PATTERN = re.compile(
+        r"Processed file \[(\d+)/(\d+)\]"
+    )
+
+    FEATURE_MATCHING_PATTERN = re.compile(
+        r"Matching block \[(\d+)/(\d+),\s*(\d+)/(\d+)\]"
+    )
+
+    MAPPER_PATTERN = re.compile(
+        r"Registering image #\d+\s+\((\d+)\)"
+    )
+
+    def __init__(self, total_images: int):
+        self.total_images = total_images
+        self.stage = None
+
+    def parse(self, line: str) -> dict | None:
+
+        # COLMAP completed
+        if line.strip() == "Done.":
+            self.stage = "completed"
+
+            return {
+                "stage": "completed",
+                "progress": 100.0,
+                "current": self.total_images,
+                "total": self.total_images,
+            }
+
+        # Feature extraction stage
+        if self.FEATURE_EXTRACTION_STAGE in line:
+            self.stage = "feature_extraction"
+
+            return {
+                "stage": self.stage,
+                "progress": 0.0,
+                "current": None,
+                "total": None,
+            }
+
+        # Feature matching stage
+        if self.FEATURE_MATCHING_STAGE in line:
+            self.stage = "feature_matching"
+
+            return {
+                "stage": self.stage,
+                "progress": 0.0,
+                "current": None,
+                "total": None,
+            }
+
+        # Mapper stage
+        if self.MAPPER_STAGE in line:
+            self.stage = "mapper"
+
+            return {
+                "stage": self.stage,
+                "progress": 0.0,
+                "current": None,
+                "total": None,
+            }
+
+        # Feature extraction progress
+        match = self.FEATURE_EXTRACTION_PATTERN.search(line)
+
+        if match:
+            current = int(match.group(1))
+            total = int(match.group(2))
+
+            progress = current / total * 100
+
+            return {
+                "stage": "feature_extraction",
+                "progress": progress,
+                "current": current,
+                "total": total,
+            }
+
+        # Feature matching progress
+        match = self.FEATURE_MATCHING_PATTERN.search(line)
+
+        if match:
+            row = int(match.group(1))
+            total_rows = int(match.group(2))
+
+            column = int(match.group(3))
+            total_columns = int(match.group(4))
+
+            current_block = (
+                (row - 1) * total_columns
+                + column
+            )
+
+            total_blocks = (
+                total_rows * total_columns
+            )
+
+            progress = (
+                current_block
+                / total_blocks
+                * 100
+            )
+
+            return {
+                "stage": "feature_matching",
+                "progress": progress,
+                "current": current_block,
+                "total": total_blocks,
+            }
+
+        # Mapper registration progress
+        match = self.MAPPER_PATTERN.search(line)
+
+        if match:
+            registered_images = int(match.group(1))
+
+            progress = (
+                registered_images
+                / self.total_images
+                * 100
+            )
+
+            return {
+                "stage": "mapper",
+                "progress": progress,
+                "current": registered_images,
+                "total": self.total_images,
+            }
+
+        return None

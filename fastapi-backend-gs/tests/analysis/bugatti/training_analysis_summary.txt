@@ -1,0 +1,17 @@
+Gaussian Splatting Training Analysis
+====================================
+
+Target iterations: 2000
+First recorded iteration: 0
+Last recorded iteration: 2000
+
+Initial recorded loss: 0.1867332
+Final recorded loss: 0.0629197
+Absolute loss reduction: 0.1238135
+Loss reduction: 66.31%
+
+Minimum recorded loss: 0.0530306
+Minimum-loss iteration: 1680
+
+Interpretation:
+The loss curve represents the change in training loss as the number of Gaussian Splatting training iterations increases.
